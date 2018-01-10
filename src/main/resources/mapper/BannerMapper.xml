@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.shunan.committeewb.dao.BannerMapper">
+
+	<sql id="queryBanner">
+		SELECT * FROM banner
+	</sql>
+	
+	<!-- 查询所有的头部大banner图 or 友情链接-->
+	<select id="queryAllBanners" parameterType="int" resultType="banner">
+		<include refid="queryBanner"/>
+		<where>
+			type=#{type}
+		</where> 
+		order by sort asc
+	</select>
+	
+	<!-- 添加banner图 or 友情链接-->
+	<insert id="insertBanner" parameterType="banner">
+		INSERT INTO banner(name,picUrl,jumpLink,type)
+		VALUES(#{name},#{picUrl},#{jumpLink},#{type})
+	</insert>
+	
+	<!-- 修改banner图 or 友情链接 -->
+	<update id="updateBanner" parameterType="banner">
+		update banner
+		set name=#{name},picUrl=#{picUrl},jumpLink=#{jumpLink},sort=#{sort}
+		where id=#{id}
+	</update>
+	
+	<!-- 根据id查询banner or 友情链接-->
+	<select id="queryBannerByID" parameterType="int" resultType="banner">
+		SELECT * FROM banner WHERE id=#{id}
+	</select>
+	
+	<!-- 删除banner -->
+	<delete id="deleteBanner" parameterType="int" >
+		DELETE FROM banner WHERE id=#{id}
+	</delete>
+</mapper>

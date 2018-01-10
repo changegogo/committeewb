@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.shunan.committeewb.dao.NewsMapper">
+
+	<sql id="queryNews">
+		SELECT * FROM news
+	</sql>
+	
+	<sql id="queryTotal">
+		SELECT COUNT(*) 
+		FROM news
+	</sql>
+	
+	<!-- 查询news时where中的status的条件 -->
+	<sql id="query_news_where_status">
+		<if test="chooseStatus!=null">
+			<if test="chooseStatus==1">
+				and status=0 and showTime&lt;now()
+			</if>
+			<if test="chooseStatus==2">
+				and status=0 and showTime&gt;now()
+			</if>
+			<if test="chooseStatus==3">
+				and status=1
+			</if>
+		</if>
+	</sql>
+	
+	<!-- 查询news时where中的search的条件 -->
+	<sql id="query_news_where_like">
+		<if test="search!=null and search!=''">
+			and title like '%${search}%' or content like '%${search}%'
+		</if>
+	</sql>
+	
+	<!-- 显示顺序 -->
+	<sql id="showOrder">
+		<if test="order=='asc'">
+			order by createTime asc
+		</if>
+		<if test="order=='desc'">
+			order by createTime desc
+		</if>
+	</sql>
+	
+	<!-- 分页时的limit条件 -->
+	<sql id="pageLimit">
+		LIMIT #{offset},#{limit}
+	</sql>
+	
+	<!-- 查询和删除news时where中newsTypeID的条件 -->
+	<sql id="where_newsTypeID_in">
+		<if test="typeIDList!=null and typeIDList.size()>0">
+			<foreach collection="typeIDList" open=" and newsTypeID IN (" close=")" item="typeID" separator=",">
+				#{typeID}
+			</foreach>
+		</if>
+	</sql>
+	
+	<!-- 查询首页需要展示的重点专注、文件通知、团青快讯等 -->
+	<select id="queryHomeNews" resultType="com.shunan.committeewb.po.News">
+		<include refid="queryNews"/>
+		<where>
+			newsTypeID=#{newsTypeID} AND STATUS=0 AND NOW()>showTime 
+		</where>
+		ORDER BY createTime DESC 
+		LIMIT #{limit}
+	</select>
+	
+	<!-- 分页查询所有的新闻 or 重点专注、文件通知等-->
+	<select id="queryPageNews" resultType="com.shunan.committeewb.po.News">
+		<include refid="queryNews"/>
+		<where>
+			<include refid="where_newsTypeID_in"/>
+			<include refid="query_news_where_status"/>
+			<include refid="query_news_where_like"/>
+		</where>
+		<include refid="showOrder"/>
+		<include refid="pageLimit"/>
+	</select>
+	
+	<!-- 查询一共多少条新闻 -->
+	<select id="queryNewsTotal" resultType="long">
+		<include refid="queryTotal"/>
+		<where>
+			<include refid="where_newsTypeID_in"/>
+			<include refid="query_news_where_status"/>
+			<include refid="query_news_where_like"/>
+		</where>
+	</select>
+	
+	<!-- 删除新闻 -->
+	<delete id="deleteNews">
+		DELETE FROM news 
+		<where>
+			<if test="idList!=null and idList.size()>0">
+				<foreach collection="idList" open=" and id IN (" close=")" item="id" separator=",">
+					#{id}
+				</foreach>
+			</if>
+		</where>
+	</delete>
+	
+	<!-- 插入新闻 -->
+	<insert id="insertNews" parameterType="news" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+		insert into news(author,status,createTime
+		<if test="title!=null and title!=''">
+			,title
+		</if>
+		<if test="newsTypeID!=0">
+			,newsTypeID
+		</if>
+		<if test="picUrl!=null and picUrl!=''">
+			,picUrl
+		</if>
+		<if test="content!=null and content!=''">
+			,content
+		</if>
+		) 
+		values(#{author},1,#{createTime}
+		<if test="title!=null and title!=''">
+			,#{title}
+		</if>
+		<if test="newsTypeID!=0">
+			,#{newsTypeID}
+		</if>
+		<if test="picUrl!=null and picUrl!=''">
+			,#{picUrl}
+		</if>
+		<if test="content!=null and content!=''">
+			,#{content}
+		</if>
+		)
+	</insert>
+	
+	<!-- 修改新闻 -->
+	<update id="updateNews" parameterType="news">
+		update news
+		set author=#{author}
+		<if test="title!=null">
+			,title=#{title}
+		</if>
+		<if test="newsTypeID!=0">
+			,newsTypeID=#{newsTypeID}
+		</if>
+		<if test="picUrl!=null">
+			,picUrl=#{picUrl}
+		</if>
+		<if test="content!=null">
+			,content=#{content} 
+		</if>
+		where id=#{id}
+	</update>
+	
+	<!-- 发布新闻 -->
+	<update id="publishNews" parameterType="news">
+		update news
+		set showTime=#{showTime},status=0,isHavePic=#{isHavePic} 
+		where id=#{id}
+	</update>
+	
+	<!-- 根据id查询新闻信息 -->
+	<select id="queryNewsByID" parameterType="int" resultType="news">
+		select * from news where id=#{id}
+	</select>
+	
+	<!-- 增加新闻的访问量 -->
+	<update id="updateNewsCount" parameterType="int">
+		UPDATE news
+		SET COUNT=COUNT+1
+		WHERE id=#{id}
+	</update>
+	
+	<sql id="queryNews_detail">
+		<if test="type=='first' or type=='next'">
+			order by id asc
+		</if>
+		<if test="type=='previous' or type=='last'">
+			order by id desc
+		</if>
+	</sql>
+	
+	<!-- 新闻详情 -->
+	<select id="queryNewsDetail" resultType="news">
+		<include refid="queryNews"/>
+		<where>
+			newsTypeID=#{newsTypeID}  
+			<if test="type=='previous'">
+				and id&lt; #{id}
+			</if>
+			<if test="type=='next'">
+				and id&gt; #{id}
+			</if>
+			<if test="type=='eq'">
+				and id=#{id}
+			</if>
+		</where>
+		<include refid="queryNews_detail"/>
+		limit 0,1
+	</select>
+	
+	<!-- 近期热门 -->
+	<select id="queryHotNews" resultType="news">
+		SELECT * 
+		FROM news
+		WHERE STATUS=0 AND NOW()&gt;showTime AND MONTH(NOW())-MONTH(showTime)&lt;1
+		ORDER BY COUNT DESC
+		LIMIT 0,10
+	</select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.shunan.committeewb.dao.NewsTypeMapper">
+
+	<!-- 查询所有的新闻类别 -->
+	<select id="queryAllNewsType" resultType="newsType">
+		SELECT * FROM newstype
+	</select>
+	
+	<!-- 根据ID查询新闻类别 -->
+	<select id="queryNewsTypeByID" parameterType="int" resultType="newsType">
+		SELECT * FROM newsType WHERE id=#{id}
+	</select>
+</mapper>
